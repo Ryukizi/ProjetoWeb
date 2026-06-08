@@ -1,0 +1,24 @@
+﻿@page "/"
+@using Validacao_1.Shared.Services
+
+@inject IValidador Validador
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+<h1>Validação idade</h1> <em>@respostaIdade</em>
+<input type="number" pattern="[0-9]*" @bind="idade" onkeypress="return event.key !== '.' && event.key !== ',';" />
+
+<button class="btn btn-primary" @onclick="() => getValidador(idade, nome)">Click me</button>
+
+@code {
+    public string respostaIdade = "";
+    private int idade;
+    private string nome = "";
+    private void getValidador(int idade, string nome)
+    {
+        respostaIdade = Validador.Idade(idade);
+    }
+    
+}
