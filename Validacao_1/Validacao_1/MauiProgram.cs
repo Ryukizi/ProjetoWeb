@@ -18,7 +18,7 @@ namespace Validacao_1
 
             // Add device-specific services used by the Validacao_1.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
-            builder.Services.AddSingleton<IValidador, IValidador>();
+            builder.Services.AddSingleton<IValidador, Validador>();
 
             builder.Services.AddMauiBlazorWebView();
 

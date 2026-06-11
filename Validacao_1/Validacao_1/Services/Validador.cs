@@ -1,18 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
-using Validacao_1.Shared.Pages;
+using System.Threading.Tasks;
 using Validacao_1.Shared.Services;
 using static Validacao_1.Shared.Pages.Home;
 
-namespace Validacao_1.Web.Services
+namespace Validacao_1.Services
 {
     public class Validador : IValidador
     {
         public List<string> EntradaDeDados(Pessoa pessoa)
         {
-           var mensagem = new List<string>();
+            var mensagem = new List<string>();
 
             if (Idade(pessoa))
             {
@@ -26,7 +29,7 @@ namespace Validacao_1.Web.Services
             }
             return mensagem;
         }
-        
+
 
         public bool Idade(Pessoa pessoa)
         {
@@ -56,13 +59,8 @@ namespace Validacao_1.Web.Services
         public string Email(Pessoa pessoa)
         {
             bool emailValido = Regex.IsMatch(pessoa.Email ?? string.Empty, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-
             if (emailValido)
             {
-                if (BancoFalso.EmailsCadastrados.Contains(pessoa.Email ?? string.Empty))
-                {
-                    return "Email já cadastrado";
-                } 
                 return "Email válido";
             }
             return "Email inválido";
@@ -96,7 +94,7 @@ namespace Validacao_1.Web.Services
             string saltBase64 = Convert.ToBase64String(salt);
             string KeyBase64 = Convert.ToBase64String(key);
 
-            return $"{iterations}.{ saltBase64}.{ KeyBase64}";
+            return $"{iterations}.{saltBase64}.{KeyBase64}";
         }
     }
 }

@@ -1,24 +1,138 @@
 ﻿@page "/"
+@using System.ComponentModel.DataAnnotations
 @using Validacao_1.Shared.Services
+@using System.Text.RegularExpressions
 
 @inject IValidador Validador
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Cadastro!</h1>
 
-<h1>Validação idade</h1> <em>@respostaIdade</em>
-<input type="number" pattern="[0-9]*" @bind="idade" onkeypress="return event.key !== '.' && event.key !== ',';" />
+<div class="alert alert-primary mt-3" role="alert">
+    <strong>Validação bem-sucedida:</strong>
+    <div>@respostaBasica</div>
+    <div>@NomeResposta</div>
+    <div>@emailResposta</div>
+    <div>@senhaResposta</div>
+</div>
 
-<button class="btn btn-primary" @onclick="() => getValidador(idade, nome)">Click me</button>
+@if(mostrarCampoCodigo)
+{
+    <div class="alert alert-success mt-3" role="alert">
+        <strong>Digite o código de verificação enviado para seu email:</strong>
+        <input type="text" @bind="codigoEnviado" placeholder="Código de verificação" />
+        <button class="btn btn-primary mt-2" @onclick="VerificarCodigo">Verificar Código</button>
+    </div>
+}
+
+<h1>Validação idade</h1> 
+<input type="number" 
+    pattern="[0-9]*" 
+    @bind="idade" 
+    onkeypress="return event.key !== '.' && event.key !== ',';" />
+
+
+<h1>Validação Nome </h1> 
+<input type="text"
+       pattern="[A-Za-zÀ-ÿ\s]+"
+       inputmode="text"
+       oninput="this.value = this.value.replace(/[0-9]/g, '')"
+       @bind="nome"
+       placeholder="Digite apenas letras"
+       onkeypress="return event.key !== '.' && event.key !== ',';" />
+<p></p>
+
+<h1>Validação Email </h1>
+<input type="text"
+       @bind="email"
+       placeholder="Digite apenas letras"/>
+
+<h1>Validação Senha </h1>
+<input type="text"
+       @bind="senha"
+       placeholder="Digite sua Senha" />
+
+<button class="btn btn-primary" @onclick="() => OnClickPessoa(idade, nome, email, senha)">Click me</button>
 
 @code {
-    public string respostaIdade = "";
+    public string respostaBasica = "";
+    private string emailResposta = "";
+    private string senhaResposta = "";
+    private string NomeResposta = "";
     private int idade;
     private string nome = "";
-    private void getValidador(int idade, string nome)
+    private string email = "";
+    private string senha = "";
+    private bool mostrarCampoCodigo = false;
+    private string codigoEnviado = "";
+    private int CodigoCorreto;
+
+    public void getValidador(Pessoa pessoa)
     {
-        respostaIdade = Validador.Idade(idade);
+        var resultado = Validador.EntradaDeDados(pessoa);
+
+        if (resultado.Count == 1)
+        {
+            respostaBasica = resultado[0];
+            emailResposta = "";
+            senhaResposta = "";
+            NomeResposta = "";
+        }
+        else
+        {
+            respostaBasica = "";
+            emailResposta = resultado[0];
+            senhaResposta = resultado[1];
+            NomeResposta = resultado[2];
+
+            if (emailResposta == "Email válido")
+            {
+                mostrarCampoCodigo = true;
+                CodigoCorreto = new Random().Next(1000, 10000);
+                Console.WriteLine($"Código de verificação enviado para o email: {CodigoCorreto}");
+            }
+            else if (emailResposta == "Email já cadastrado")
+            {
+                mostrarCampoCodigo = false;
+            }
+        }
     }
-    
+
+    private void VerificarCodigo()
+    {
+        if(codigoEnviado == CodigoCorreto.ToString())
+        {
+            respostaBasica = "Código verificado com sucesso!";
+            mostrarCampoCodigo = false;
+            BancoFalso.EmailsCadastrados.Add(email);
+        }
+        else
+        {
+            respostaBasica = "Código de verificação incorreto. Tente novamente.";
+        }
+    }
+
+    private void OnClickPessoa(int idade, string nome, string email, string senha)
+    {
+        var _pessoa = new Pessoa
+        {
+            Nome = nome,
+            Idade = idade,
+            Email = email,
+            Senha = senha
+        };
+        getValidador(_pessoa);
+    }
+
+    public class Pessoa
+    {
+        public string Nome { get; set; } = string.Empty;
+
+        public int Idade { get; set; }
+
+        public string Email { get; set; } = string.Empty;
+
+        public string Senha { get; set; } = string.Empty;
+    }
 }
