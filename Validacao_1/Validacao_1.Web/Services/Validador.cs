@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using Supabase;
+using Supabase.Interfaces;
 using System;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -10,13 +12,22 @@ namespace Validacao_1.Web.Services
 {
     public class Validador : IValidador
     {
-        public List<string> EntradaDeDados(Pessoa pessoa)
+        // 1. Mantemos o nome correto do cliente injetado
+        private readonly Client _supabaseClient;
+
+        public Validador(Client supabaseClient)
         {
-           var mensagem = new List<string>();
+            _supabaseClient = supabaseClient;
+        }
+
+        public async Task<List<string>> EntradaDeDados(Pessoa pessoa)
+        {
+            var mensagem = new List<string>();
 
             if (Idade(pessoa))
             {
-                mensagem.Add(Email(pessoa));
+                // Como Email agora retorna a resposta, adicionamos o retorno dele na lista
+                mensagem.Add(await Email(pessoa));
                 mensagem.Add(Senha(pessoa));
                 mensagem.Add(Nome(pessoa));
             }
@@ -26,7 +37,6 @@ namespace Validacao_1.Web.Services
             }
             return mensagem;
         }
-        
 
         public bool Idade(Pessoa pessoa)
         {
@@ -53,19 +63,33 @@ namespace Validacao_1.Web.Services
             }
         }
 
-        public string Email(Pessoa pessoa)
+        public async Task<string> Email(Pessoa pessoa)
         {
             bool emailValido = Regex.IsMatch(pessoa.Email ?? string.Empty, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 
-            if (emailValido)
+            if (!emailValido)
             {
-                if (BancoFalso.EmailsCadastrados.Contains(pessoa.Email ?? string.Empty))
+                return "Formatado de email inválido";
+            }
+            try
+            {
+                var resultado = await _supabaseClient
+                    .From<Usuario>()
+                    .Filter("email", Supabase.Postgrest.Constants.Operator.Equals, pessoa.Email)
+                    .Get();
+
+                if (resultado.Models.Any())
                 {
-                    return "Email já cadastrado";
-                } 
+                    return "Email já cadastrado no banco de dados";
+                }
+
                 return "Email válido";
             }
-            return "Email inválido";
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== ERRO COMPLETO DO BANCO: {ex.ToString()} ===");
+                return "Erro ao validar email no banco de dados";
+            }
         }
 
         public string Senha(Pessoa pessoa)
@@ -74,13 +98,12 @@ namespace Validacao_1.Web.Services
 
             if (senhaValida)
             {
-                //return "Senha válida";
                 return HashPassword(pessoa.Senha ?? string.Empty) + "senha valída";
             }
             return "senha inválida";
         }
 
-        private static string HashPassword(string password)
+        public string HashPassword(string password)
         {
             const int iterations = 100_000;
             const int saltSize = 32;
@@ -96,7 +119,7 @@ namespace Validacao_1.Web.Services
             string saltBase64 = Convert.ToBase64String(salt);
             string KeyBase64 = Convert.ToBase64String(key);
 
-            return $"{iterations}.{ saltBase64}.{ KeyBase64}";
+            return $"{iterations}.{saltBase64}.{KeyBase64}";
         }
     }
 }
