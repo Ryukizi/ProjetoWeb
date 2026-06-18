@@ -95,9 +95,9 @@ namespace Validacao_1.Services
                 return "Erro ao validar email no banco de dados";
             }
         }
+
         public async Task EnviarEmailCodigo(string emailDoCliente, int codigo)
         {
-
 
             var mensagem = new MailMessage();
             mensagem.From = new MailAddress(remetente, "Sistema de Cadastro");
@@ -114,7 +114,6 @@ namespace Validacao_1.Services
             };
 
             await smtpClient.SendMailAsync(mensagem);
-        }
         }
 
         public string Senha(Pessoa pessoa)

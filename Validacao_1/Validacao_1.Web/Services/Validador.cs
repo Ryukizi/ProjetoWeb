@@ -96,7 +96,7 @@ namespace Validacao_1.Web.Services
 
         public async Task EnviarEmailCodigo(string emailDoCliente, int codigo)
         {
-   
+
 
             var mensagem = new MailMessage();
             mensagem.From = new MailAddress(remetente, "Sistema de Cadastro");
