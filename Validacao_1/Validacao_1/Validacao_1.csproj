@@ -63,6 +63,7 @@
   <ItemGroup>
     <None Include="..\Validacao_1.Shared\Pages\Component.razor" Link="Component.razor" />
     <None Include="..\Validacao_1.Shared\Pages\Component2.razor" Link="Component2.razor" />
+    <None Include="..\Validacao_1.Shared\Pages\Component3.razor" Link="Component3.razor" />
   </ItemGroup>
 
   <ItemGroup>

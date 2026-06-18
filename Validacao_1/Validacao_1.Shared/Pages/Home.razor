@@ -1,12 +1,62 @@
-﻿@page "/"
+﻿Aqui está a sua página **`Home.razor`** atualizada com a mudança no método `VerificarCodigo`.
+
+Modifiquei apenas a parte interna do cadastro para que, quando um usuário novo for registrado, ele crie o formato de sessão correto especificando o perfil `"Usuario"`.
+
+```razor
+@page "/"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Web
 @using System.ComponentModel.DataAnnotations
 @using Validacao_1.Shared.Services
 @using System.Text.RegularExpressions
-@using Supabase 
+@using Supabase
+@using Validacao_1.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IValidador Validador
-@inject Client SupabaseClient 
+@inject Client SupabaseClient
+@inject NavigationManager Navigation
 
 <PageTitle>Home</PageTitle>
+
+<div class="container mt-4">
+    <AuthorizeView>
+        <Authorized>
+            <div class="alert alert-success">
+                🎉 Olá, <strong>@context.User.Identity?.Name</strong>! Você fez login com sucesso.
+            </div>
+
+            <hr />
+            <h3>Área de Teste de Perfis:</h3>
+
+            <AuthorizeView Roles="Admin" Context="adminContext">
+                <div class="card border-danger mb-3">
+                    <div class="card-header bg-danger text-white">👑 Visão do Administrador</div>
+                    <div class="card-body text-danger">
+                        <p class="card-text">Se você está vendo esta caixa vermelha, o seu perfil no Supabase é <strong>Admin</strong> e o Blazor leu com sucesso!</p>
+                    </div>
+                </div>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Usuario" Context="userContext">
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white">👤 Visão do Usuário Comum</div>
+                    <div class="card-body text-primary">
+                        <p class="card-text">Se você está vendo esta caixa azul, o seu perfil no Supabase é <strong>Usuario</strong> comum!</p>
+                    </div>
+                </div>
+            </AuthorizeView>
+
+            <button class="btn btn-secondary mt-3" @onclick="ExecutarLogout">Sair do Sistema</button>
+        </Authorized>
+
+        <NotAuthorized>
+            <div class="alert alert-warning">
+                ⚠️ Você está deslogado. Vá para a página de login.
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
 
 <h1>Cadastro!</h1>
 
@@ -18,7 +68,7 @@
     <div>@senhaResposta</div>
 </div>
 
-@if(mostrarCampoCodigo)
+@if (mostrarCampoCodigo)
 {
     <div class="alert alert-success mt-3" role="alert">
         <strong>Digite o código de verificação enviado para seu email:</strong>
@@ -27,14 +77,14 @@
     </div>
 }
 
-<h1>Validação idade</h1> 
-<input type="number" 
-    pattern="[0-9]*" 
-    @bind="idade" 
-    onkeypress="return event.key !== '.' && event.key !== ',';" />
+<h1>Validação idade</h1>
+<input type="number"
+       pattern="[0-9]*"
+       @bind="idade"
+       onkeypress="return event.key !== '.' && event.key !== ',';" />
 
 
-<h1>Validação Nome </h1> 
+<h1>Validação Nome </h1>
 <input type="text"
        pattern="[A-Za-zÀ-ÿ\s]+"
        inputmode="text"
@@ -47,7 +97,7 @@
 <h1>Validação Email </h1>
 <input type="text"
        @bind="email"
-       placeholder="Digite seu Email"/>
+       placeholder="Digite seu Email" />
 
 <h1>Validação Senha </h1>
 <input type="text"
@@ -55,6 +105,10 @@
        placeholder="Digite sua Senha" />
 
 <button class="btn btn-primary" @onclick="async () => await OnClickPessoa(idade, nome, email, senha)">Click me</button>
+
+<button class=" btn btn-danger" @onclick="ExecutarLogout">
+    Sair da Conta
+</button>
 
 @code {
     public string respostaBasica = "";
@@ -90,7 +144,6 @@
             senhaResposta = resultado[1];
             NomeResposta = resultado[2];
 
-            // Agora a comparação bate exatamente com "Senha válida"
             if (emailResposta == "Email válido" && senhaResposta == "Senha valída" && NomeResposta == "Nome valído")
             {
                 mostrarCampoCodigo = true;
@@ -104,30 +157,43 @@
         }
     }
 
-    // Mudamos para async Task para podermos usar o await do Supabase
     private async Task VerificarCodigo()
     {
-        if(codigoEnviado == CodigoCorreto.ToString())
+        if (codigoEnviado == CodigoCorreto.ToString())
         {
             try
             {
-                // 1. Criamos o objeto do usuário baseado no que está na tabela do banco
                 var novoUsuario = new Usuario
                 {
                     Nome = nome,
                     Idade = idade,
                     Email = email,
-                    Senha = Validador.HashPassword(senha) // Idealmente aqui você usaria a senha encriptada do hash
+                    Senha = Validador.HashPassword(senha)
                 };
 
-                // 2. MANDANDO PARA O SUPABASE DE VERDADE!
                 await SupabaseClient.From<Usuario>().Insert(novoUsuario);
+                var cadastro = await SupabaseClient.Auth.SignUp(email, senha);
+
+                if (cadastro != null)
+                {
+                    // 🟢 CORREÇÃO: Estruturando o JSON idêntico ao esperado pelo Provider, definindo o perfil padrão como "Usuario"
+                    var sessaoSimuladaCadastro = new
+                    {
+                        user = new
+                        {
+                            email = email,
+                            id = cadastro.User?.Id ?? "0",
+                            perfil = "Usuario"
+                        }
+                    };
+
+                    var sessionJson = System.Text.Json.JsonSerializer.Serialize<object>(sessaoSimuladaCadastro);
+                    await ((SupabaseAuthStateProvider)AuthStateProvider).MarcarComoLogado(sessionJson);
+                    StateHasChanged();
+                }
 
                 respostaBasica = "Código verificado e Usuário cadastrado no Supabase com sucesso!";
                 mostrarCampoCodigo = false;
-                
-                // Mantive o seu banco falso caso use em outro lugar
-                BancoFalso.EmailsCadastrados.Add(email); 
             }
             catch (Exception ex)
             {
@@ -153,6 +219,25 @@
         await getValidador(_pessoa);
     }
 
+    private async Task ExecutarLogout()
+    {
+        try
+        {
+            await SupabaseClient.Auth.SignOut();
+
+            await ((SupabaseAuthStateProvider)AuthStateProvider).MarcarComoDeslogado();
+
+            respostaBasica = "Você foi deslogado com sucesso!";
+            mostrarCampoCodigo = false;
+
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            respostaBasica = $"Erro ao deslogar: {ex.Message}";
+        }
+    }
+
     public class Pessoa
     {
         public string Nome { get; set; } = string.Empty;
@@ -161,3 +246,5 @@
         public string Senha { get; set; } = string.Empty;
     }
 }
+
+```

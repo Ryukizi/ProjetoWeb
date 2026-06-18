@@ -23,4 +23,7 @@ public class Usuario : BaseModel
 
     [Column("senha")]
     public string Senha { get; set; } = string.Empty;
+
+    [Column("perfil")]
+    public string Perfil { get; set; } = "Usuario";
 }

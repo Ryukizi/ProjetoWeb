@@ -25,5 +25,7 @@ namespace Validacao_1.Shared.Services
         public bool VerifyPassword(string password, string storedhash);
 
         public Task EnviarEmailCodigo(string emailDoClient, int codigo);
+
+        public Task FazerLogout();
     }
 }

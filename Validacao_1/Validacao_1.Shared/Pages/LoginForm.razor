@@ -3,32 +3,46 @@
 @using Validacao_1.Shared.Services
 @using System.Text.RegularExpressions
 @using Supabase
+@using Microsoft.AspNetCore.Components.Authorization
+@using Validacao_1.Web.Services
 @inject IValidador Validador
 @inject Client SupabaseClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
 <PageTitle>Login</PageTitle>
 
 <div class="container mt-5" style="max-width: 500px;">
-    <h1>Entrar no Sistema</h1>
+    <AuthorizeView>
+        <Authorized>
+            <div class="alert alert-success" role="alert">
+                🎉 <strong>Você já está conectado!</strong>
+                <div>Bem-vindo de volta! Redirecionando...</div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <h1>Entrar no Sistema</h1>
 
-    @if (!string.IsNullOrEmpty(mensagemResultado))
-    {
-        <div class="alert @(loginSucesso ? "alert-success" : "alert-danger") mt-3" role="alert">
-            @mensagemResultado
-        </div>
-    }
+            @if (!string.IsNullOrEmpty(mensagemResultado))
+            {
+                <div class="alert @(loginSucesso ? "alert-success" : "alert-danger") mt-3" role="alert">
+                    @mensagemResultado
+                </div>
+            }
 
-    <div class="form-group mt-3">
-        <h1>Digite seu Email</h1>
-        <input type="text" class="form-control" @bind="emailInput" placeholder="Digite seu Email" />
-    </div>
+            <div class="form-group mt-3">
+                <label class="form-label fw-bold">Digite seu Email</label>
+                <input type="text" class="form-control" @bind="emailInput" placeholder="Digite seu Email" />
+            </div>
 
-    <div class="form-group mt-3">
-        <h1>Digite sua Senha</h1>
-        <input type="password" class="form-control" @bind="passwordInput" placeholder="Digite sua Senha" />
-    </div>
+            <div class="form-group mt-3">
+                <label class="form-label fw-bold">Digite sua Senha</label>
+                <input type="password" class="form-control" @bind="passwordInput" placeholder="Digite sua Senha" />
+            </div>
 
-    <button class="btn btn-primary mt-4" @onclick="EfetuarLogin">Entrar</button>
+            <button class="btn btn-primary mt-4 w-100" @onclick="EfetuarLogin">Entrar</button>
+        </NotAuthorized>
+    </AuthorizeView>
 </div>
 
 @code {
@@ -39,7 +53,7 @@
 
     private async Task EfetuarLogin()
     {
-        if(string.IsNullOrWhiteSpace(emailInput) || string.IsNullOrWhiteSpace(passwordInput))
+        if (string.IsNullOrWhiteSpace(emailInput) || string.IsNullOrWhiteSpace(passwordInput))
         {
             mensagemResultado = "Por favor, preencha todos os campos.";
             loginSucesso = false;
@@ -48,6 +62,7 @@
 
         try
         {
+            // 1. Voltamos a buscar na SUA tabela igual ao seu código antigo
             var resposta = await SupabaseClient
                 .From<Usuario>()
                 .Where(x => x.Email == emailInput)
@@ -55,15 +70,35 @@
 
             var usuario = resposta.Models.FirstOrDefault();
 
+            // 2. Usamos a SUA validação de hash que funcionava perfeitamente
             if (usuario != null && Validador.VerifyPassword(passwordInput, usuario.Senha))
             {
                 loginSucesso = true;
                 mensagemResultado = $"Bem-vindo, {usuario.Nome}!";
+
+                // 3. Criamos um JSON simulando a sessão para o seu Provider aceitar
+                // 🟢 ALTERAÇÃO AQUI: Incluído o campo "perfil" puxando da propriedade do seu modelo
+                var sessaoSimulada = new
+                {
+                    user = new
+                    {
+                        email = usuario.Email,
+                        id = usuario.Id,
+                        perfil = usuario.Perfil // 👈 Mude para usuario.Cargo ou usuario.Role se no banco o nome for diferente
+                    }
+                };
+                var sessionJson = System.Text.Json.JsonSerializer.Serialize<object>(sessaoSimulada);
+
+                // 4. Avisa o Blazor que está logado
+                await ((SupabaseAuthStateProvider)AuthStateProvider).MarcarComoLogado(sessionJson);
+
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/");
             }
             else
             {
                 loginSucesso = false;
-                mensagemResultado = "Usuário não encontrado.";
+                mensagemResultado = "Usuário ou senha incorretos.";
             }
         }
         catch (Exception ex)

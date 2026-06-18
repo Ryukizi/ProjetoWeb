@@ -98,8 +98,7 @@ namespace Validacao_1.Services
 
         public async Task EnviarEmailCodigo(string emailDoCliente, int codigo)
         {
-
-            //Endereço Removido por segurança
+            //REMOVIDO POR SEGURANÇA
             var mensagem = new MailMessage();
             mensagem.From = new MailAddress(remetente, "Sistema de Cadastro");
             mensagem.To.Add(new MailAddress(emailDoCliente));
@@ -109,8 +108,8 @@ namespace Validacao_1.Services
 
             using var smtpClient = new SmtpClient("smtp-relay.brevo.com")
             {
-                Port = 587,
-                Credentials = new NetworkCredential("teste@smtp-brevo.com", suaSenhaDeApp),
+                Port = 587,                        //REMOVIDO POR SEGURANÇA
+                Credentials = new NetworkCredential("", suaSenhaDeApp),
                 EnableSsl = true,
             };
 
@@ -167,6 +166,11 @@ namespace Validacao_1.Services
             var enteredKey = pbkdf2.GetBytes(storedKey.Length);
 
             return CryptographicOperations.FixedTimeEquals(enteredKey, storedKey);
+        }
+
+        public async Task FazerLogout()
+        {
+            await _supabaseClient.Auth.SignOut();
         }
     }
 }

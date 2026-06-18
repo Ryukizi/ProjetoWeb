@@ -9,11 +9,11 @@
     <link rel="stylesheet" href="_content/Validacao_1.Shared/app.css" />
     <link rel="stylesheet" href="Validacao_1.Web.styles.css" />
     <link rel="icon" type="image/png" href="_content/Validacao_1.Shared/favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_framework/blazor.web.js"></script>
 </body>
 
