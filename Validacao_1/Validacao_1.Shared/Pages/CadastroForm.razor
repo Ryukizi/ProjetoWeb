@@ -129,12 +129,10 @@
 
             var resultado = await Validador.EntradaDeDados(pessoa);
 
-            // Mapeia os erros apenas se a lista contiver dados de falha por campo
             _emailResposta = resultado != null && resultado.Count > 0 ? resultado[0] : "";
             _senhaResposta = resultado != null && resultado.Count > 1 ? resultado[1] : "";
             _nomeResposta = resultado != null && resultado.Count > 2 ? resultado[2] : "";
 
-            // 🌟 JUNTOS E SEM REDUNDÂNCIA: Sucesso se a lista for vazia OU se passar no IsFormularioValido
             if (resultado == null || resultado.Count == 0 || IsFormularioValido())
             {
                 _respostaBasica = "Dados validados com sucesso! Enviando código...";
@@ -150,7 +148,6 @@
             }
             else
             {
-                // Se o erro for global (ex: menor de idade), exibe a mensagem direta
                 _respostaBasica = resultado.Count == 1 ? resultado[0] : "Existem erros de validação no formulário.";
                 _mostrarCampoCodigo = false;
             }

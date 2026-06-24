@@ -61,10 +61,9 @@
             var estadoAutenticacao = await AuthStateProvider.GetAuthenticationStateAsync();
             var usuario = estadoAutenticacao.User;
 
-            // Se o usuário já estiver logado, espera 3 segundos e redireciona
             if (usuario.Identity is not null && usuario.Identity.IsAuthenticated)
             {
-                await Task.Delay(3000); // Tempo de espera em milissegundos (3 segundos)
+                await Task.Delay(3000);
                 Navigation.NavigateTo("/");
             }
         }

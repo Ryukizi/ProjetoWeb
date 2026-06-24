@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.Extensions.Configuration; // Adicionado para ler o appsettings
+using Microsoft.Extensions.Configuration; 
 using Validacao_1.Shared.Services;
 using Validacao_1.Shared.Models;
 
@@ -16,7 +16,7 @@ namespace Validacao_1.Web.Services
     public class Validador : IValidador
     {
         private readonly Client _supabaseClient;
-        private readonly IConfiguration _config; // Injeção de configuração
+        private readonly IConfiguration _config;
 
         public Validador(Client supabaseClient, IConfiguration config)
         {
@@ -31,10 +31,9 @@ namespace Validacao_1.Web.Services
             if (!Idade(pessoa))
             {
                 erros.Add("Pessoa é menor de idade, não é possível realizar o cadastro.");
-                return erros; // Retorna imediatamente pois menor de idade não pode se cadastrar
+                return erros;
             }
 
-            //  Validações adicionando apenas se houver erro
             var erroNome = Nome(pessoa);
             if (!string.IsNullOrEmpty(erroNome)) erros.Add(erroNome);
 

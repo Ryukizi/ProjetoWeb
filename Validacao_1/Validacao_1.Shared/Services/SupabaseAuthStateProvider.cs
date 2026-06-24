@@ -43,7 +43,7 @@ namespace Validacao_1.Web.Services
 
                 string email = "";
                 string id = "";
-                string perfil = ""; // 👈 Mantendo o padrão: criamos a string vazia
+                string perfil = ""; 
 
                 if (root.TryGetProperty("user", out var userProp))
                 {
@@ -56,7 +56,6 @@ namespace Validacao_1.Web.Services
                             : idProp.GetString() ?? "";
                     }
 
-                    // 🟢 BUSCA O PERFIL DO USUÁRIO NO LOCALSTORAGE
                     if (userProp.TryGetProperty("perfil", out var perfilProp))
                     {
                         perfil = perfilProp.GetString() ?? "";
@@ -72,7 +71,7 @@ namespace Validacao_1.Web.Services
                 {
                     new Claim(ClaimTypes.Name, email),
                     new Claim(ClaimTypes.NameIdentifier, id),
-                    new Claim(ClaimTypes.Role, perfil) // 🟢 ADICIONA O PERFIL NAS CLAIMS
+                    new Claim(ClaimTypes.Role, perfil) 
                 }, "SupabaseAuth");
 
                 _currentAuthenticationState = new AuthenticationState(new ClaimsPrincipal(identity));
@@ -98,7 +97,6 @@ namespace Validacao_1.Web.Services
                 ? idProp.GetInt64().ToString()
                 : idProp.GetString() ?? "";
 
-            // 🟢 BUSCA O PERFIL AQUI NO LOGIN TAMBÉM
             string perfil = "";
             if (root.GetProperty("user").TryGetProperty("perfil", out var perfilProp))
             {
@@ -109,7 +107,7 @@ namespace Validacao_1.Web.Services
             {
                 new Claim(ClaimTypes.Name, email),
                 new Claim(ClaimTypes.NameIdentifier, id),
-                new Claim(ClaimTypes.Role, perfil) // 🟢 ADICIONA O PERFIL NAS CLAIMS
+                new Claim(ClaimTypes.Role, perfil) 
             }, "SupabaseAuth");
 
             _currentAuthenticationState = new AuthenticationState(new ClaimsPrincipal(identity));
@@ -128,10 +126,8 @@ namespace Validacao_1.Web.Services
 
         public async Task FazerLogout()
         {
-            // 1. Desloga do Supabase
             await _supabaseClient.Auth.SignOut();
 
-            // 2. Limpa o estado local do Blazor (o método que você já tem)
             await MarcarComoDeslogado();
         }
     }

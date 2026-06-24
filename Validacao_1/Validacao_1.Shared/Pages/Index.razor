@@ -62,7 +62,6 @@
     {
         try
         {
-            // 🚀 Apenas uma linha chama o serviço centralizado!
             await ((SupabaseAuthStateProvider)AuthStateProvider).FazerLogout();
 
             Navigation.NavigateTo("/login", forceLoad: true);
